@@ -5,7 +5,8 @@ import os
 import subprocess
 
 INITIAL_EXTENSIONS = [
-    'cogs.hellocog'
+    'cogs.hellocog',
+    'cogs.teamcog'
 ]
 
 _DISCORD_TOKEN = os.environ['_DISCORD_TOKEN']
