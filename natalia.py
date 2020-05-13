@@ -27,7 +27,9 @@ class Natalia(commands.Bot):
         print(self.user.id)
         print('-----')
 
-if __name__ == '__main__':
+def main():
     bot = Natalia(command_prefix='!')
     bot.run(_DISCORD_TOKEN)
 
+if __name__ == '__main__':
+    main()
