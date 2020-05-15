@@ -12,12 +12,12 @@ class TeamCog(commands.Cog):
 
     @commands.command(
             usage='<チームごとの人数>',
-            help='チーム分けをします\n'
+            help='チーム分けをするヨ！\n'
                  '例: !team 2\n'
-                 'Emi, Hatsumi, Saki, Kurumi, Dosumi\n ↓\n'
-                 'A: Dosumi, Hatsumi\n'
-                 'B: Saki, Emi\n'
-                 'C: Kurumi'
+                 'ALl: Natalia, Lyra, Miku, Ibuki, Chinami\n ↓\n'
+                 'A: Lyra, Ibuki\n'
+                 'B: Chinami, Natalia\n'
+                 'C: Miku'
             )
     async def team(self, ctx, num_of_team_member: int):
         members = self.get_members(ctx)
@@ -25,10 +25,18 @@ class TeamCog(commands.Cog):
         msg = self.create_embed(teams)
         await ctx.send(embed=msg)
 
+    @team.error
+    async def team_error(self, ctx, error):
+        print(f'{error=}')
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('ナニ言ってるかワカラナイヨ…')
+        elif isinstance(error, commands.CommandInvokeError):
+            await ctx.send('ボイチャに接続できないヨ……')
+
     def get_members(self, ctx):
         state = ctx.author.voice
         if not state:
-            raise Exception('ボイチャに接続できないヨ…')
+            raise Exception('Cannot connect voice channel')
 
         members = [mem.name for mem in state.channel.members]
         return members
@@ -41,9 +49,10 @@ class TeamCog(commands.Cog):
         return teams
 
     def create_embed(self, teams):
+        CHAR_A = 65
         embed = Embed(title='チームわけ')
         for index, team in enumerate(teams):
-            name = chr(65+index)
+            name = chr(CHAR_A + index)
             value = reduce(lambda x, y: f'{x}, {y}', team)
             embed.add_field(name=name, value=value, inline=False)
 
