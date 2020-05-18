@@ -1,10 +1,12 @@
 import random
-import math
 from functools import reduce
+from itertools import filterfalse
+
+from discord import Embed
+from discord.ext import commands
 
 from more_itertools import chunked
-from discord.ext import commands
-from discord import Embed
+
 
 class TeamCog(commands.Cog):
     def __init__(self, bot):
@@ -33,12 +35,36 @@ class TeamCog(commands.Cog):
         elif isinstance(error, commands.CommandInvokeError):
             await ctx.send('ボイチャに接続できないヨ……')
 
-    def get_members(self, ctx):
+    def get_members(self, ctx, exclude_bot=True):
+        """
+        ctxからボイスチャンネルに接続しているメンバー名リストを取得する
+        botは除外できる
+
+        Parameters
+        ----------
+        self: Object
+            self
+        ctx: discord.ext.commands.Context
+            コンテキスト
+            > Represents the context in which a command is being invoked under.
+        exclude_bot: bool
+            ボットを除外するか
+
+        returns
+        ------
+        members: List[string]
+            ボイスチャンネルに接続しているメンバー名リスト
+        """
+
         state = ctx.author.voice
         if not state:
             raise Exception('Cannot connect voice channel')
 
-        members = [mem.name for mem in state.channel.members]
+        connected_members = state.channel.members
+        if exclude_bot:
+            connected_members = filterfalse(lambda mem: mem.bot, connected_members)
+
+        members = [mem.name for mem in connected_members]
         return members
 
     def divide_per_member(self, num_of_member: int, members: list):
@@ -58,6 +84,7 @@ class TeamCog(commands.Cog):
 
         embed.set_footer(text='例: 4人チーム作りたいとき→ !team 4')
         return embed
+
 
 def setup(bot):
     bot.add_cog(TeamCog(bot))
