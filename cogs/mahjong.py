@@ -1,5 +1,6 @@
 import json
 import random
+from typing import Dict
 
 from discord.ext import commands, tasks
 
@@ -11,31 +12,32 @@ SAYINGS_JSON = 'assets/sayings.json'
 
 
 class 麻雀(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.hand_updater.start()
 
     @commands.command(
+            brief='タンヤオ！って言えばいいのカ？',
             help='デイリーミッション♪\n'
                  '今日はコノ役で上がってネ！'
             )
-    async def 今日の役(self, ctx):
+    async def 今日の役(self, ctx: commands.Context):
         hand = self.today_hand
         saying = self.random_saying()
         await ctx.send(
                 f'今日の役は **{hand["name"]}**♪\n'
-                f'{int2kanji(hand["fan"])}翻だヨ！ {saying}'
+                f'{int2kanji(hand["fan"])}翻ダ！ {saying}'
                 )
 
     @今日の役.error
     async def 今日の役_error(self, ctx, error):
-        await ctx.send('タ　ン　ヤ　オ')
+        await ctx.send('タ　ン　ヤ　オ　！')
 
     @tasks.loop(hours=24)
     async def hand_updater(self):
         self.today_hand = self.random_hand()
 
-    def random_hand(self):
+    def random_hand(self) -> Dict[str, int]:
         """
         飜数に応じた重みランダムで役を出力する
 
@@ -53,7 +55,7 @@ class 麻雀(commands.Cog):
         print(f'{hand=}')
         return hand[0]
 
-    def random_saying(self):
+    def random_saying(self) -> str:
         """
         名言bot
         """
