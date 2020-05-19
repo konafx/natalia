@@ -12,6 +12,16 @@ CHATCOLORS = {
     10000: 'RED'
 }
 
+COLORS = {
+    'BLUE': 0x134A9D,
+    'AQUA': 0x28E4FD,
+    'GREEN': 0x32E8B7,
+    'YELLOW': 0xFCD748,
+    'ORANGE': 0xF37C22,
+    'MAGENTA': 0xE72564,
+    'RED': 0xE32624
+    }
+
 
 class SuperchatCog(commands.Cog):
     def __init__(self, bot):
@@ -23,9 +33,20 @@ class SuperchatCog(commands.Cog):
                  '例: !superchat 2434 かわいい\n'
                  '例: !superchat 50000\n'
             )
-    async def superchat(self, ctx, tip: int, comment: str):
-        color = chatcolor(tip)
-        await ctx.send(embed=msg)
+    async def superchat(self, ctx, tip: int, *comments):
+        # 円マーク
+        JPY = b'\\xa5'.decode('unicode-escape')
+        embed = Embed(
+                title=f'{JPY}{tip:,}',
+                description=' '.join(comments),
+                color=COLORS[chatcolor(tip)]
+                )
+        embed.set_author(name=ctx.author.display_name)
+        embed.set_thumbnail(url=ctx.author.avatar_url_as(
+            format='png',
+            static_format='png'
+            ))
+        await ctx.send(embed=embed)
 
     @superchat.error
     async def superchat_error(self, ctx, error):
