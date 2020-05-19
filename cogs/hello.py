@@ -1,6 +1,6 @@
 from discord.ext import commands
 
-class ハロー！(commands.Cog):
+class Hello(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -9,4 +9,4 @@ class ハロー！(commands.Cog):
         await ctx.send('Bon tarde!')
 
 def setup(bot):
-    bot.add_cog(ハロー！(bot))
+    bot.add_cog(Hello(bot))
