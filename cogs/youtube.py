@@ -23,7 +23,7 @@ COLORS = {
     }
 
 
-class SuperchatCog(commands.Cog):
+class YouTube(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -65,4 +65,4 @@ def chatcolor(tip: int, chatcolors: dict = CHATCOLORS):
 
 
 def setup(bot):
-    bot.add_cog(SuperchatCog(bot))
+    bot.add_cog(YouTube(bot))

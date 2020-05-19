@@ -1,4 +1,4 @@
-from cogs.superchatcog import SuperchatCog, chatcolor
+from cogs.youtube import chatcolor
 
 import pytest
 

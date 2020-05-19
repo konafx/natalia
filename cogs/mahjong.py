@@ -10,7 +10,7 @@ HANDS_JSON = 'assets/hands.json'
 SAYINGS_JSON = 'assets/sayings.json'
 
 
-class MahjongCog(commands.Cog):
+class 麻雀(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.hand_updater.start()
@@ -66,4 +66,4 @@ class MahjongCog(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(MahjongCog(bot))
+    bot.add_cog(麻雀(bot))
