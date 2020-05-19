@@ -1,8 +1,9 @@
 import random
 from functools import reduce
 from itertools import filterfalse
+from typing import List
 
-from discord import Embed
+import discord
 from discord.ext import commands
 
 from more_itertools import chunked
@@ -14,28 +15,33 @@ class ソーシャルディスタンス(commands.Cog):
 
     @commands.command(
             usage='<チームごとの人数>',
-            help='チーム分けをするヨ！\n'
+            brief='チーム分けをするヨ！',
+            help='接続してるボイチャのみんなをチーム分けするヨ！\n'
+                 '人数は100人までにして欲しいナ…♪\n'
                  '例: !team 2\n'
                  'ALl: Natalia, Lyra, Miku, Ibuki, Chinami\n ↓\n'
                  'A: Lyra, Ibuki\n'
                  'B: Chinami, Natalia\n'
                  'C: Miku'
             )
-    async def team(self, ctx, num_of_team_member: int):
-        members = self.get_members(ctx)
+    async def team(self, ctx: commands.Context, num_of_team_member: int = 4):
+        members = self.get_members(ctx.author)
         teams = self.divide_per_member(num_of_team_member, members)
-        msg = self.create_embed(teams)
-        await ctx.send(embed=msg)
+        embed = self.create_embed(teams)
+        await ctx.send(embed=embed)
 
     @team.error
-    async def team_error(self, ctx, error):
+    async def team_error(self, ctx: commands.Context, error: Exception):
         print(f'{error=}')
         if isinstance(error, commands.BadArgument):
             await ctx.send('ナニ言ってるかワカラナイヨ…')
         elif isinstance(error, commands.CommandInvokeError):
-            await ctx.send('ボイチャに接続できないヨ……')
+            if isinstance(error.original, ValueError):
+                await ctx.send('ミクが「みくは彼氏がいるから１円から５万円までにゃ！」って言ってたヨ？')
+            else:
+                await ctx.send('スシ〜♪')
 
-    def get_members(self, ctx, exclude_bot=True):
+    def get_members(self, member: discord.Member, exclude_bot=True):
         """
         ctxからボイスチャンネルに接続しているメンバー名リストを取得する
         botは除外できる
@@ -56,9 +62,9 @@ class ソーシャルディスタンス(commands.Cog):
             ボイスチャンネルに接続しているメンバー名リスト
         """
 
-        state = ctx.author.voice
+        state = member.voice
         if not state:
-            raise Exception('Cannot connect voice channel')
+            raise Exception('ボイチャに接続してないヨ〜！')
 
         connected_members = state.channel.members
         if exclude_bot:
@@ -67,16 +73,19 @@ class ソーシャルディスタンス(commands.Cog):
         members = [mem.name for mem in connected_members]
         return members
 
-    def divide_per_member(self, num_of_member: int, members: list):
+    def divide_per_member(self, num_of_member: int, members: List[str]) -> List[List[str]]:
+        if (num_of_member < 1 or num_of_member > 100):
+            raise ValueError('Range Over [1, 100]')
+
         random.shuffle(members)
 
         teams = list(chunked(members, num_of_member))
 
         return teams
 
-    def create_embed(self, teams):
+    def create_embed(self, teams: List[List[str]]) -> discord.Embed:
         CHAR_A = 65
-        embed = Embed(title='チームわけ')
+        embed = discord.Embed(title='チームわけ')
         for index, team in enumerate(teams):
             name = chr(CHAR_A + index)
             value = reduce(lambda x, y: f'{x}, {y}', team)
@@ -86,5 +95,5 @@ class ソーシャルディスタンス(commands.Cog):
         return embed
 
 
-def setup(bot):
+def setup(bot: commands.Bot):
     bot.add_cog(ソーシャルディスタンス(bot))

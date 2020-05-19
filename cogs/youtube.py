@@ -1,5 +1,9 @@
-from discord import Embed
+from typing import Dict
+
+import discord
 from discord.ext import commands
+
+import utils.message as msg
 
 
 CHATCOLORS = {
@@ -24,19 +28,21 @@ COLORS = {
 
 
 class YouTube(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(
             usage='<値段> <?コメント>',
-            help='センキュー・スパチャ♪ ┗(┓卍^o^)卍ﾄﾞｩﾙﾙﾙﾙﾙﾙ↑↑\n'
+            brief='センキュー・スパチャ♪ ┗(┓卍^o^)卍ﾄﾞｩﾙﾙﾙﾙﾙﾙ↑↑',
+            help='気持ちを伝えるゾ！１円玉から諭吉サン５枚までで盛り上げるよ♪\n'
+                 'でも、改行は伝えられないミタイ…？\n'
                  '例: !superchat 2434 かわいい\n'
                  '例: !superchat 50000\n'
             )
-    async def superchat(self, ctx, tip: int, *comments):
+    async def superchat(self, ctx: commands.Context, tip: int, *comments):
         # 円マーク
         JPY = b'\\xa5'.decode('unicode-escape')
-        embed = Embed(
+        embed = discord.Embed(
                 title=f'{JPY}{tip:,}',
                 description=' '.join(comments),
                 color=COLORS[chatcolor(tip)]
@@ -49,13 +55,15 @@ class YouTube(commands.Cog):
         await ctx.send(embed=embed)
 
     @superchat.error
-    async def superchat_error(self, ctx, error):
+    async def superchat_error(self, ctx: commands.Context, error: Exception):
         print(f'{error=}')
         if isinstance(error, commands.BadArgument):
-            await ctx.send('ナニ言ってるかワカラナイヨ…')
+            await ctx.author.send('整数しかワカラナイヨ…')
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.author.send(msg.command_usage(ctx))
 
 
-def chatcolor(tip: int, chatcolors: dict = CHATCOLORS):
+def chatcolor(tip: int, chatcolors: Dict[int, str] = CHATCOLORS) -> str:
     if (tip < 1 or tip > 50000):
         raise ValueError('Range Over [1, 50000]')
 
@@ -64,5 +72,5 @@ def chatcolor(tip: int, chatcolors: dict = CHATCOLORS):
     return color
 
 
-def setup(bot):
+def setup(bot: commands.Bot):
     bot.add_cog(YouTube(bot))
