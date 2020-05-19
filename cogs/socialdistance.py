@@ -8,7 +8,7 @@ from discord.ext import commands
 from more_itertools import chunked
 
 
-class TeamCog(commands.Cog):
+class ソーシャルディスタンス(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -87,4 +87,4 @@ class TeamCog(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(TeamCog(bot))
+    bot.add_cog(ソーシャルディスタンス(bot))

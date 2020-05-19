@@ -5,10 +5,10 @@ import os
 import subprocess
 
 INITIAL_EXTENSIONS = [
-    'cogs.hellocog',
-    'cogs.teamcog',
-    'cogs.mahjongcog',
-    'cogs.superchatcog'
+    'cogs.hello',
+    'cogs.socialdistance',
+    'cogs.mahjong',
+    'cogs.youtube'
 ]
 
 _DISCORD_TOKEN = os.environ['_DISCORD_TOKEN']
