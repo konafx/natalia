@@ -37,7 +37,8 @@ class YouTube(commands.Cog):
             help='気持ちを伝えるゾ！１円玉から諭吉サン５枚までで盛り上げるよ♪\n'
                  'でも、改行は伝えられないミタイ…？\n'
                  '例: !superchat 2434 かわいい\n'
-                 '例: !superchat 50000\n'
+                 '例: !superchat 50000\n',
+            aliases=['スパチャ', '投げ銭']
             )
     async def superchat(self, ctx: commands.Context, tip: int, *comments):
         # 円マーク
@@ -47,8 +48,7 @@ class YouTube(commands.Cog):
                 description=' '.join(comments),
                 color=COLORS[chatcolor(tip)]
                 )
-        embed.set_author(name=ctx.author.display_name)
-        embed.set_thumbnail(url=ctx.author.avatar_url_as(
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url_as(
             format='png',
             static_format='png'
             ))
