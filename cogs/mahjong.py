@@ -47,7 +47,7 @@ class 麻雀(commands.Cog):
             e.g. {'name': 'タンヤオ', 'fan': 1}
         """
 
-        with open(HANDS_JSON, 'r') as f:
+        with open(HANDS_JSON, 'r', encoding='utf-8') as f:
             hands = json.load(f)
 
         hand_weights = [MAX_FAN - hand['fan'] + 1 for hand in hands]
