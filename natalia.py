@@ -8,7 +8,8 @@ INITIAL_EXTENSIONS = [
     'cogs.hello',
     'cogs.socialdistance',
     'cogs.mahjong',
-    'cogs.youtube'
+    'cogs.youtube',
+    'cogs.amongus'
 ]
 
 _DISCORD_TOKEN = os.environ['_DISCORD_TOKEN']
