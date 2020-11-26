@@ -1,11 +1,13 @@
 version: "3"
 services:
-  python:
+  app:
     restart: always
-    build: .
-    container_name: "python3"
+    user: root
+    build:
+      context: .
+    env_file: .env
+    container_name: "natalia"
     working_dir: "/usr/src/app"
-    tty: true
     volumes:
       - ./:/usr/src/app
 
