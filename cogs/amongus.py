@@ -9,6 +9,7 @@ Channel = Union[GuildChannel, PrivateChannel]
 MOVER_CHANNEL = 'moveradmin'
 MEETING_REACTION = emoji.emojize(':loudspeaker:')
 MUTE_REACTION = emoji.emojize(':zipper-mouth_face:')
+WATCH_MESSAGE = 'START'
 
 
 class AmongUs(commands.Cog):
@@ -25,6 +26,9 @@ class AmongUs(commands.Cog):
         if message.author.id != self.bot.user.id:
             return
 
+        if message.content != WATCH_MESSAGE:
+            return
+
         # 命令を受信したら次の命令のためにユーザーが押したリアクションを削除する
         user = self.bot.get_user(payload.user_id)
         for reaction in message.reactions:
@@ -38,7 +42,7 @@ class AmongUs(commands.Cog):
             brief='リアクションを押してほしいナ！',
             )
     async def mover(self, ctx: commands.Context):
-        message = await ctx.send('START')
+        message = await ctx.send(WATCH_MESSAGE)
         await message.add_reaction(MEETING_REACTION)
         await message.add_reaction(MUTE_REACTION)
 
