@@ -1,6 +1,5 @@
 import random
 from functools import reduce
-from typing import List
 
 import discord
 from discord.ext import commands
@@ -41,7 +40,7 @@ class ソーシャルディスタンス(commands.Cog):
             else:
                 await ctx.send('スシ〜♪')
 
-    def divide_per_member(self, num_of_member: int, members: List[str]) -> List[List[str]]:
+    def divide_per_member(self, num_of_member: int, members: list[str]) -> list[list[str]]:
         if (num_of_member < 1 or num_of_member > 100):
             raise ValueError('Range Over [1, 100]')
 
@@ -51,7 +50,7 @@ class ソーシャルディスタンス(commands.Cog):
 
         return teams
 
-    def create_embed(self, teams: List[List[str]]) -> discord.Embed:
+    def create_embed(self, teams: list[list[str]]) -> discord.Embed:
         CHAR_A = 65
         embed = discord.Embed(title='チームわけ')
         for index, team in enumerate(teams):

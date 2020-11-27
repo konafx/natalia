@@ -1,4 +1,4 @@
-from typing import Union, Optional, List
+from typing import Union, Optional
 from functools import reduce
 from itertools import islice
 
@@ -62,7 +62,7 @@ class AmongUs(commands.Cog):
             await ctx.send('引数2つ指定しろ')
             return
 
-        voice_channels: List[Optional[discord.VoiceChannel]] = []
+        voice_channels: list[Optional[discord.VoiceChannel]] = []
         for channel_name in [meeting_channel_name, mute_channel_name]:
             channel = discord.utils.get(ctx.guild.channels, name=channel_name)
             if channel is None:
@@ -91,7 +91,7 @@ class AmongUs(commands.Cog):
         await message.add_reaction(self.reactions['meeting'])
         await message.add_reaction(self.reactions['mute'])
 
-    def init_target_channels(self, meeting_channel_name: str = 'meeting', mute_channel_name: Optional[str] = 'mute', channels: List[Optional[Channel]]):
+    def init_target_channels(self, meeting_channel_name: str = 'meeting', mute_channel_name: Optional[str] = 'mute', channels: list[Optional[Channel]]):
         meeting_channel = discord.utils.get(channels, name=meeting_channel_name)
         mute_channel = discord.utils.get(channels, name=mute_channel_name)
         self.channels = {

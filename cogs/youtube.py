@@ -1,5 +1,3 @@
-from typing import Dict
-
 import discord
 from discord.ext import commands
 
@@ -63,7 +61,7 @@ class YouTube(commands.Cog):
             await ctx.author.send(msg.command_usage(ctx))
 
 
-def chatcolor(tip: int, chatcolors: Dict[int, str] = CHATCOLORS) -> str:
+def chatcolor(tip: int, chatcolors: dict[int, str] = CHATCOLORS) -> str:
     if (tip < 1 or tip > 50000):
         raise ValueError('Range Over [1, 50000]')
 
