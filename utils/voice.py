@@ -1,10 +1,10 @@
-from typing import List, Optional
+from typing import Optional
 from itertools import filterfalse
 from discord import Member, VoiceChannel
 from discord.abc import GuildChannel
 
 
-def get_members(member: Member, exclude_bot=True) -> List[Member]:
+def get_members(member: Member, exclude_bot=True) -> list[Member]:
     """
     メンバーが接続しているボイスチャンネルの全メンバーを取得する
     botは除外できる
@@ -18,7 +18,7 @@ def get_members(member: Member, exclude_bot=True) -> List[Member]:
 
     returns
     ------
-    connected_members: List[discord.Member]
+    connected_members: list[discord.Member]
         ボイスチャンネルに接続しているメンバーリスト
     """
 
