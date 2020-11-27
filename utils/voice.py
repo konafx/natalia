@@ -4,7 +4,7 @@ from discord import Member, VoiceChannel
 from discord.abc import GuildChannel
 
 
-def get_members(member: Member, exclude_bot=True) -> list[Member]:
+def get_attendees(member: Member, exclude_bot=True) -> list[Member]:
     """
     メンバーが接続しているボイスチャンネルの全メンバーを取得する
     botは除外できる
@@ -45,5 +45,9 @@ async def move_channnel(member: Member, destination: VoiceChannel, mute=False, r
         )
 
 
-def get_channel(channels: ):
-    channel = discord.utils.get(ctx.guild.channels, name=channel_name)
+def get_channel_by_name(channels: list[GuildChannel], name='') -> GuildChannel:
+    channel = discord.utils.get(channels, name=name)
+    if channel is None:
+        raise Exception(f'#{name}チャンネルは存在しません')
+    
+    return channel
