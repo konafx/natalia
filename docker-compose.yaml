@@ -5,7 +5,8 @@ services:
     user: root
     build:
       context: .
-    env_file: .env
+    environment: 
+      - _DISCORD_TOKEN=${_DISCORD_TOKEN}
     container_name: "natalia"
     working_dir: "/usr/src/app"
     volumes:
