@@ -33,6 +33,14 @@ class AmongUs(commands.Cog):
         user = self.bot.get_user(payload.user_id)
         for reaction in message.reactions:
             await message.remove_reaction(reaction, user)
+        
+        # Reaction判定
+        if payload.emoji.name == MEETING_REACTION:
+            await channel.send('MEETING')
+        elif payload.emoji.name == MUTE_REACTION:
+            await channel.send('MUTE')
+        else:
+            await channel.send(f'{payload.emoji.name=}')
 
         print(f'{payload}, {message}')
         print(f'{channel.name=} {channel.name == "fushimi-general"}')
