@@ -3,9 +3,11 @@ USER root
 
 WORKDIR /usr/src/app
 
+RUN apt update
+RUN apt install gnupg2 -y
+
 COPY poetry.lock pyproject.toml ./
 
-# RUN apt update
 # RUN apt -y install locales && \
     # localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
 
