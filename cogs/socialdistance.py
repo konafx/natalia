@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 from more_itertools import chunked
-from utils.voice import get_attendees
+from utils.voice import get_members
 
 
 class ソーシャルディスタンス(commands.Cog):
@@ -24,7 +24,7 @@ class ソーシャルディスタンス(commands.Cog):
                  'C: Miku'
             )
     async def team(self, ctx: commands.Context, num_of_team_member: int = 4):
-        members = [mem.name for mem in get_attendees(ctx.author)]
+        members = [mem.name for mem in get_members(ctx.author)]
         teams = self.divide_per_member(num_of_team_member, members)
         embed = self.create_embed(teams)
         await ctx.send(embed=embed)

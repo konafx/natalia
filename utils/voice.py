@@ -4,7 +4,7 @@ from discord import Member, VoiceChannel
 from discord.abc import GuildChannel
 
 
-def get_attendees(member: Member, exclude_bot=True) -> list[Member]:
+def get_members(member: Member, exclude_bot=True) -> list[Member]:
     """
     メンバーが接続しているボイスチャンネルの全メンバーを取得する
     botは除外できる
@@ -27,6 +27,7 @@ def get_attendees(member: Member, exclude_bot=True) -> list[Member]:
         raise Exception('ボイチャに接続してないヨ〜！')
 
     connected_members = state.channel.members
+
     print(f'{connected_members=}')
     if connected_members:
         print(f'{state.channel.voice_states=}')
@@ -37,7 +38,21 @@ def get_attendees(member: Member, exclude_bot=True) -> list[Member]:
     return connected_members
 
 
-async def move_channnel(member: Member, destination: VoiceChannel, mute=False, reason: Optional[str] = None):
+def get_attendees(channel: VoiceChannel, exclude_bot=True) -> list[Member]:
+    attendees = channel.members
+    if len(attendees) == 0:
+        attendee_ids = channel.voice_states.keys()
+        print(f'{[type(id) for id in attendee_ids]}')
+        attendees = [channel.guild.get_member(id) for id in attendee_ids]
+
+    print(f'{attendees}')
+    if exclude_bot:
+        attendees = filterfalse(lambda attendee: attendee.bot, attendees)
+
+    return attendees
+
+
+async def move_channel(member: Member, destination: VoiceChannel, mute=False, reason: Optional[str] = None):
     await member.edit(
         reason=reason,
         mute=mute,
