@@ -39,15 +39,23 @@ def get_members(member: Member, exclude_bot=True) -> list[Member]:
 
 
 def get_attendees(channel: VoiceChannel, exclude_bot=True) -> list[Member]:
-    attendees = channel.members
-    if len(attendees) == 0:
-        attendee_ids = channel.voice_states.keys()
-        print(f'{[type(id) for id in attendee_ids]}')
-        attendees = [channel.guild.get_member(id) for id in attendee_ids]
+    """
+    チャンネルの参加者を取得する
+    ボット起動前のチャンネル参加者は取得できない
 
-    print(f'{attendees}')
-    if exclude_bot:
-        attendees = filterfalse(lambda attendee: attendee.bot, attendees)
+    Parameters
+    ----------
+    channel: discord.VoiceChannel
+        メンバー
+    exclude_bot: bool
+        ボットを除外するか
+
+    returns
+    ------
+    attendees: list[discord.Member]
+        ボイスチャンネルに接続しているメンバーリスト
+    """
+    attendees = filterfalse(lambda attendee: attendee.bot, channel.members)
 
     return attendees
 
