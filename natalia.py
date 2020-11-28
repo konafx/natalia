@@ -1,4 +1,6 @@
+from typing import Optional
 from discord.ext import commands
+from discord import Intents
 
 import traceback
 import os
@@ -15,8 +17,11 @@ INITIAL_EXTENSIONS = [
 _DISCORD_TOKEN = os.environ['_DISCORD_TOKEN']
 
 class Natalia(commands.Bot):
-    def __init__(self, command_prefix):
-        super().__init__(command_prefix)
+    def __init__(self, command_prefix, intent: Optional[Intents]=None):
+        if not intent:
+            intent = Intents.default()
+
+        super().__init__(command_prefix, intent=intent)
 
         for cog in INITIAL_EXTENSIONS:
             try:
@@ -31,7 +36,20 @@ class Natalia(commands.Bot):
         print('-----')
 
 def main():
-    bot = Natalia(command_prefix='!')
+    # guilds (get_channel)
+    # members (get_member)
+    # voice_states (VoiceChannel.members, voice_states)
+    # guild_messages (on_reaction_add)
+    # guild_reactions (..)
+    intent = Intents.default()
+    intent.guilds = True
+    intent.members = True
+    intent.voice_states = True
+    intent.guild_messages = True
+    intent.guild_reactions = True
+    
+    print(f'{intent=}')
+    bot = Natalia(command_prefix='!', intent=intent)
     bot.run(_DISCORD_TOKEN)
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 from typing import Union, Optional
-from functools import reduce
+from functools import reduce, partial
 from itertools import islice
-from enum import IntEnum
+from enum import IntFlag
 import asyncio
 
 from discord.ext import commands
@@ -9,7 +9,7 @@ from discord.abc import GuildChannel, PrivateChannel
 import discord
 import emoji
 
-from utils.voice import get_attendees, move_channnel
+from utils.voice import get_attendees, move_channel
 
 
 Channel = Union[GuildChannel, PrivateChannel]
@@ -18,7 +18,7 @@ MOVER_CHANNEL = 'moveradmin'
 WATCH_MESSAGE = 'START'
 
 
-class GameMode(IntEnum):
+class GameMode(IntFlag):
     MEETING = 0
     MUTE = 1
 
@@ -37,11 +37,13 @@ class AmongUs(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         print(f'{payload}')
+        print(f'{self.channels}')
 
         # bot自身のリアクションは無視
         if payload.user_id == self.bot.user.id:
             return
 
+        # TODO: get_channelがguilds intent必要なので fetch_channelでもいい気がする
         channel = self.bot.get_channel(payload.channel_id)
         # messageが自分のものじゃなかったら無視
         message = await channel.fetch_message(payload.message_id)
@@ -65,19 +67,18 @@ class AmongUs(commands.Cog):
         else:
             await channel.send(f'{payload.emoji.name=}')
             return
+        
+        print(f'{self.channels[not next_mode]}')
 
-        attendees = get_attendees(payload.member)
+        attendees = get_attendees(self.channels[not next_mode])
 
-        print(f'{self.channels}')
-        # task? queue
-        for attendee in attendees:
-            await move_channnel(
-                attendee,
-                self.channels[next_mode],
-                True if next_mode == GameMode.MUTE else False
-                )
-
-        print(f'{channel.name=} {channel.name == "fushimi-general"}')
+        move_channel_in_mode = partial(
+            move_channel,
+            destination=self.channels[next_mode],
+            mute=(next_mode == GameMode.MUTE)
+            )
+        cors = [move_channel_in_mode(attendee) for attendee in attendees]
+        await asyncio.gather(*cors)
 
     @commands.command(
             brief='リアクションを押してほしいナ！',
@@ -96,6 +97,7 @@ class AmongUs(commands.Cog):
             await ctx.send('引数2つ指定しろ')
             return
 
+        channels: list[VoiceChannel] = []
         for channel_name in args:
             channel = discord.utils.get(ctx.guild.channels, name=channel_name)
             if channel is None:
@@ -108,7 +110,9 @@ class AmongUs(commands.Cog):
                 await ctx.send(f'{channel_name}はボイチャじゃねえ')
                 return
 
-            self.channels.append(channel)
+            channels.append(channel)
+        
+        self.channels = channels
         
         # 監視対象メッセージを送信
         message = await ctx.send(WATCH_MESSAGE)
