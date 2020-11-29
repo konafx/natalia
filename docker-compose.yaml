@@ -1,0 +1,21 @@
+version: "3"
+services:
+  app:
+    restart: always
+    user: root
+    build:
+      context: .
+    environment: 
+      - _DISCORD_TOKEN=${_DISCORD_TOKEN}
+    container_name: "natalia"
+    working_dir: "/usr/src/app"
+    volumes:
+      - ./:/usr/src/app
+
+  code:
+    image: codercom/code-server
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/home/coder/project
