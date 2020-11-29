@@ -1,6 +1,5 @@
 import json
 import random
-from typing import Dict
 
 from discord.ext import commands, tasks
 
@@ -37,7 +36,7 @@ class 麻雀(commands.Cog):
     async def hand_updater(self):
         self.today_hand = self.random_hand()
 
-    def random_hand(self) -> Dict[str, int]:
+    def random_hand(self) -> dict[str, int]:
         """
         飜数に応じた重みランダムで役を出力する
 
