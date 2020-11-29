@@ -1,48 +1,31 @@
 # Natalia
-私用のDiscord Botです。
+DiscordのBotです。
 
 [discord.py](https://discordpy.readthedocs.io/ja/latest/index.html)によるフレームワーク[discord.ext.commands](https://discordpy.readthedocs.io/ja/latest/ext/commands/index.html)をフル活用しています。
 
 ## 機能
-```
-!help
+### チーム分け
+ボイスチャンネルに接続しているメンバーのチーム分けをします。
 
-AmongUs:
-  mover     リアクションを押してほしいナ！
-Hello:
-  hello     
-YouTube:
-  superchat センキュー・スパチャ♪ ┗(┓卍^o^)卍ﾄﾞｩﾙﾙﾙﾙﾙﾙ↑↑
-No Category:
-  help      Shows this message
-ソーシャルディスタンス:
-  team      チーム分けをするヨ！
-麻雀:
-  今日の役  タンヤオ！って言えばいいのカ？
+```
+!team 3
+
+チームわけ
+A
+ナターリア, 小松伊吹, 小室千奈美
+B
+木村夏樹, ライラ, 脇山珠美
 ```
 
-## Developers
-### Start
+### 麻雀デイリーミッション
+麻雀の役をランダムに１つ表示します
+
 ```
-# Set _DISCORD_TOKEN or create .env
+!今日の役
 
-docker-compose up -d --build
-# launch codeserver at http://localhost:8080
-# or
-docker-compose up -d app
-
-docker-compose exec app bash
-
-# in container
-python natalia.py
+断么九 (一翻)
 ```
 
-Thanks! @max-koara, @Sonochy
-
-### Branch Rule
-developブランチにPR送ってください
-
-- master
-- develop
-  - release (--> master, develop)
-  - feature (--> develop)
+### Future work
+- [x] チーム分け: ボットを除外
+- [ ] 麻雀の手配をランダムに生成

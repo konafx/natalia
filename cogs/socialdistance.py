@@ -1,11 +1,12 @@
 import random
 from functools import reduce
+from itertools import filterfalse
+from typing import List
 
 import discord
 from discord.ext import commands
 
 from more_itertools import chunked
-from utils.voice import get_members
 
 
 class ソーシャルディスタンス(commands.Cog):
@@ -24,7 +25,7 @@ class ソーシャルディスタンス(commands.Cog):
                  'C: Miku'
             )
     async def team(self, ctx: commands.Context, num_of_team_member: int = 4):
-        members = [mem.name for mem in get_members(ctx.author)]
+        members = self.get_members(ctx.author)
         teams = self.divide_per_member(num_of_team_member, members)
         embed = self.create_embed(teams)
         await ctx.send(embed=embed)
@@ -40,7 +41,39 @@ class ソーシャルディスタンス(commands.Cog):
             else:
                 await ctx.send('スシ〜♪')
 
-    def divide_per_member(self, num_of_member: int, members: list[str]) -> list[list[str]]:
+    def get_members(self, member: discord.Member, exclude_bot=True):
+        """
+        ctxからボイスチャンネルに接続しているメンバー名リストを取得する
+        botは除外できる
+
+        Parameters
+        ----------
+        self: Object
+            self
+        ctx: discord.ext.commands.Context
+            コンテキスト
+            > Represents the context in which a command is being invoked under.
+        exclude_bot: bool
+            ボットを除外するか
+
+        returns
+        ------
+        members: List[string]
+            ボイスチャンネルに接続しているメンバー名リスト
+        """
+
+        state = member.voice
+        if not state:
+            raise Exception('ボイチャに接続してないヨ〜！')
+
+        connected_members = state.channel.members
+        if exclude_bot:
+            connected_members = filterfalse(lambda mem: mem.bot, connected_members)
+
+        members = [mem.name for mem in connected_members]
+        return members
+
+    def divide_per_member(self, num_of_member: int, members: List[str]) -> List[List[str]]:
         if (num_of_member < 1 or num_of_member > 100):
             raise ValueError('Range Over [1, 100]')
 
@@ -50,7 +83,7 @@ class ソーシャルディスタンス(commands.Cog):
 
         return teams
 
-    def create_embed(self, teams: list[list[str]]) -> discord.Embed:
+    def create_embed(self, teams: List[List[str]]) -> discord.Embed:
         CHAR_A = 65
         embed = discord.Embed(title='チームわけ')
         for index, team in enumerate(teams):
