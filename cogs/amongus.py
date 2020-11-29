@@ -14,7 +14,6 @@ from utils.voice import get_attendees, move_channel
 
 Channel = Union[GuildChannel, PrivateChannel]
 
-MOVER_CHANNEL = 'moveradmin'
 WATCH_MESSAGE = 'START'
 
 
@@ -65,11 +64,8 @@ class AmongUs(commands.Cog):
         elif payload.emoji.name == REACTIONS[GameMode.MUTE]:
             next_mode = GameMode.MUTE
         else:
-            await channel.send(f'{payload.emoji.name=}')
             return
         
-        print(f'{self.channels[not next_mode]}')
-
         attendees = get_attendees(self.channels[not next_mode])
 
         move_channel_in_mode = partial(
@@ -77,8 +73,8 @@ class AmongUs(commands.Cog):
             destination=self.channels[next_mode],
             mute=(next_mode == GameMode.MUTE)
             )
-        cors = [move_channel_in_mode(attendee) for attendee in attendees]
-        await asyncio.gather(*cors)
+        coroutines = [move_channel_in_mode(attendee) for attendee in attendees]
+        await asyncio.gather(*coroutines)
 
     @commands.command(
             brief='リアクションを押してほしいナ！',
