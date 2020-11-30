@@ -4,6 +4,7 @@ from functools import reduce
 import asyncio
 import re
 from time import time
+import os
 
 from discord.ext import commands
 from discord.abc import GuildChannel, PrivateChannel
@@ -16,6 +17,8 @@ from utils.voice import get_attendees, move_channel
 Channel = Union[GuildChannel, PrivateChannel]
 
 WATCH_MESSAGE = 'START'
+
+GUILD_IDS = os.environ['_DISCORD_GUILDS']
 
 
 class GameMode(IntEnum):
@@ -48,6 +51,10 @@ class AmongUs(commands.Cog):
 
         print(f'{payload}')
         print(f'{self.channels}')
+
+        if GUILD_IDS and payload.guild_id not in GUILD_IDS:
+            print(f'{guild_id}で呼ばれたが、対応しないよ')
+            return
 
         # bot自身のリアクションは無視
         if payload.user_id == self.bot.user.id:
@@ -236,6 +243,10 @@ class AmongUs(commands.Cog):
             await ctx.send('サーバーでやれ')
             return
 
+        if GUILD_IDS and ctx.guild.id not in GUILD_IDS:
+            print(f'{ctx.guild.name}で呼ばれたが、対応しないよ')
+            return
+
         if len(args) != 3:
             # raise error
             await ctx.send('引数2つ指定しろ')
@@ -277,4 +288,8 @@ class AmongUs(commands.Cog):
 
 
 def setup(bot: commands.Bot):
+    global GUILD_IDS
+    if GUILD_IDS:
+        GUILD_IDS = list(map(lambda id: int(id), GUILD_IDS.split(';')))
+
     bot.add_cog(AmongUs(bot))

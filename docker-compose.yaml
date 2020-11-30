@@ -8,6 +8,7 @@ services:
     tty: true
     environment: 
       - _DISCORD_TOKEN=${_DISCORD_TOKEN}
+      - _DISCORD_GUILDS=${_DISCORD_GUILDS}
     container_name: "natalia"
     working_dir: "/usr/src/app"
     volumes:
