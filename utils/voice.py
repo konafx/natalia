@@ -1,12 +1,9 @@
 from typing import Optional
 from itertools import filterfalse
-from discord import Member, VoiceChannel
-from discord.abc import GuildChannel
-
-from time import time
+import discord
 
 
-def get_members(member: Member, exclude_bot=True) -> list[Member]:
+def get_members(member: discord.Member, exclude_bot=True) -> list[discord.Member]:
     """
     メンバーが接続しているボイスチャンネルの全メンバーを取得する
     botは除外できる
@@ -40,7 +37,7 @@ def get_members(member: Member, exclude_bot=True) -> list[Member]:
     return connected_members
 
 
-def get_attendees(channel: VoiceChannel, exclude_bot=True) -> list[Member]:
+def get_attendees(channel: discord.VoiceChannel, exclude_bot=True) -> list[discord.Member]:
     """
     チャンネルの参加者を取得する
     ボット起動前のチャンネル参加者は取得できない
@@ -57,18 +54,19 @@ def get_attendees(channel: VoiceChannel, exclude_bot=True) -> list[Member]:
     attendees: list[discord.Member]
         ボイスチャンネルに接続しているメンバーリスト
     """
-    attendees = filterfalse(lambda attendee: attendee.bot, channel.members)
+    attendees = channel.members
+    if exclude_bot:
+        attendees = list(filterfalse(lambda attendee: attendee.bot, attendees))
 
     return attendees
 
 
 async def move_channel(
-        member: Member,
-        destination: VoiceChannel,
-        mute: Optional[bool]=None,
+        member: discord.Member,
+        destination: discord.VoiceChannel,
+        mute: Optional[bool] = None,
         reason: Optional[str] = None
         ):
-    startTime = time()
     args = {
         'reason': reason,
         'voice_channel': destination,
@@ -77,14 +75,3 @@ async def move_channel(
         args['mute'] = mute
 
     await member.edit(**args)
-    endTime = time()
-    runTime = endTime - startTime
-    print(f'move_channel: {runTime}')
-
-
-def get_channel_by_name(channels: list[GuildChannel], name='') -> GuildChannel:
-    channel = discord.utils.get(channels, name=name)
-    if channel is None:
-        raise Exception(f'#{name}チャンネルは存在しません')
-    
-    return channel
