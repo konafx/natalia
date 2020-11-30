@@ -60,22 +60,15 @@ class AmongUs(commands.Cog):
             await message.remove_reaction(reaction, payload.member)
 
         next_mode: GameMode = GameMode.MEETING
+        coroutines: list[asyncio.coroutines] = []
         # Reaction判定
         if payload.emoji.name == REACTIONS[GameMode.MEETING]:
-            next_mode = GameMode.MEETING
+            coroutines = self.mute_to_meeting() + self.heaven_to_meeting()
         elif payload.emoji.name == REACTIONS[GameMode.MUTE]:
-            next_mode = GameMode.MUTE
+            coroutines = self.meeting_to_mute() + self.meeting_to_heaven()
         else:
             return
 
-        attendees = get_attendees(self.channels[not next_mode])
-
-        move_channel_in_mode = partial(
-            move_channel,
-            destination=self.channels[next_mode],
-            mute=(next_mode == GameMode.MUTE)
-            )
-        coroutines = [move_channel_in_mode(attendee) for attendee in attendees]
         await asyncio.gather(*coroutines)
 
     async def mute_to_meeting(self) -> list[asyncio.coroutine]:
@@ -165,7 +158,7 @@ class AmongUs(commands.Cog):
         ctx : commands.Context
             [description]
         """
-        if len(args) != 2:
+        if len(args) != 3:
             # raise error
             await ctx.send('引数2つ指定しろ')
             return
