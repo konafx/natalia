@@ -62,13 +62,21 @@ def get_attendees(channel: VoiceChannel, exclude_bot=True) -> list[Member]:
     return attendees
 
 
-async def move_channel(member: Member, destination: VoiceChannel, mute=False, reason: Optional[str] = None):
+async def move_channel(
+        member: Member,
+        destination: VoiceChannel,
+        mute: Optional[bool]=None,
+        reason: Optional[str] = None
+        ):
     startTime = time()
-    await member.edit(
-        reason=reason,
-        mute=mute,
-        voice_channel=destination
-        )
+    args = {
+        'reason': reason,
+        'voice_channel': destination,
+        }
+    if mute is not None:
+        args['mute'] = mute
+
+    await member.edit(**args)
     endTime = time()
     runTime = endTime - startTime
     print(f'move_channel: {runTime}')
