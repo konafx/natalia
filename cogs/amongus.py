@@ -28,7 +28,6 @@ class GameMode(IntEnum):
     LOG = 3
     FINISH = 4
 
-
 REACTIONS = {
     GameMode.MEETING: emoji.emojize(':loudspeaker:'),
     GameMode.MUTE: emoji.emojize(':zipper-mouth_face:'),
@@ -115,7 +114,6 @@ class AmongUs(commands.Cog):
         self.running = False
 
     def mute_to_meeting(self) -> list[asyncio.coroutine]:
-        startTime = time()
         attendees = get_attendees(self.channels[GameMode.MUTE])
 
         coroutines = [
@@ -126,34 +124,25 @@ class AmongUs(commands.Cog):
             )
             for attendee in attendees
         ]
-        endTime = time() #プログラムの終了時刻
-        runTime = endTime - startTime #処理時間
-        print(f'mute_to_meeting: {runTime}')
         return coroutines
 
     def heaven_to_meeting(self):
-        startTime = time() #プログラムの開始時刻
  
-        ghosts = get_attendees(self.channels[GameMode.HEAVEN])
-        self.ghosts = list(ghosts)
+        attendees = get_attendees(self.channels[GameMode.HEAVEN])
 
         coroutines = [
             move_channel(
-                member=ghost,
+                member= attendee,
                 destination=self.channels[GameMode.MEETING],
                 mute=True,
             )
-            for ghost in self.ghosts
+            for attendee in attendees
         ]
-        endTime = time() #プログラムの終了時刻
-        runTime = endTime - startTime #処理時間
-        print(f'heaven_to_meeting: {runTime}')
         return coroutines
 
     def meeting_to_mute(self):
-        startTime = time()
         attendees = get_attendees(self.channels[GameMode.MEETING])
-        attendees = filter(lambda attendee: attendee not in self.ghosts, attendees)
+        attendees = filter(lambda attendee: not (attendee.voice.mute or attendee.voice.self_mute), attendees)
 
         # if destination is afk_channel, need not mute by guild
         move_to_mute_channel = partial(move_channel, mute=True) if self.guild_mute else move_channel
@@ -165,24 +154,20 @@ class AmongUs(commands.Cog):
                 )
             for attendee in attendees
         ]
-        endTime = time() #プログラムの終了時刻
-        runTime = endTime - startTime #処理時間
-        print(f'meeting_to_mute: {runTime}')
         return coroutines
 
     def meeting_to_heaven(self):
-        startTime = time()
+        attendees = get_attendees(self.channels[GameMode.MEETING])
+        attendees = filter(lambda attendee: attendee.voice.mute or attendee.voice.self_mute , attendees)
+
         coroutines = [
             move_channel(
-                member=ghost,
+                member=attendee,
                 destination=self.channels[GameMode.HEAVEN],
                 mute=False,
             )
-            for ghost in self.ghosts
+            for attendee in attendees 
         ]
-        endTime = time() #プログラムの終了時刻
-        runTime = endTime - startTime #処理時間
-        print(f'meeting_to_heawven: {runTime}')
         return coroutines
 
     def finish_game(self):
