@@ -3,6 +3,8 @@ from itertools import filterfalse
 from discord import Member, VoiceChannel
 from discord.abc import GuildChannel
 
+from time import time
+
 
 def get_members(member: Member, exclude_bot=True) -> list[Member]:
     """
@@ -61,11 +63,15 @@ def get_attendees(channel: VoiceChannel, exclude_bot=True) -> list[Member]:
 
 
 async def move_channel(member: Member, destination: VoiceChannel, mute=False, reason: Optional[str] = None):
+    startTime = time()
     await member.edit(
         reason=reason,
         mute=mute,
         voice_channel=destination
         )
+    endTime = time()
+    runTime = endTime - startTime
+    print(f'move_channel: {runTime}')
 
 
 def get_channel_by_name(channels: list[GuildChannel], name='') -> GuildChannel:
