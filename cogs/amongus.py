@@ -28,7 +28,6 @@ class GameMode(IntEnum):
     LOG = 3
     FINISH = 4
 
-
 REACTIONS = {
     GameMode.MEETING: emoji.emojize(':loudspeaker:'),
     GameMode.MUTE: emoji.emojize(':zipper-mouth_face:'),
