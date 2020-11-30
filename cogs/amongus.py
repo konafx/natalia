@@ -1,23 +1,17 @@
-from typing import Union
+import re
+import os
+import asyncio
 from enum import IntEnum
 from functools import reduce, partial
-import asyncio
-import re
-from time import time
-import os
 
 from discord.ext import commands
-from discord.abc import GuildChannel, PrivateChannel
 import discord
 import emoji
 
 from utils.voice import get_attendees, move_channel
 
 
-Channel = Union[GuildChannel, PrivateChannel]
-
-WATCH_MESSAGE = 'START'
-
+WATCH_MESSAGE = '下のリアクションを押してね'
 GUILD_IDS = os.environ.get('_DISCORD_GUILDS', None)
 
 
@@ -27,6 +21,7 @@ class GameMode(IntEnum):
     HEAVEN = 2
     LOG = 3
     FINISH = 4
+
 
 REACTIONS = {
     GameMode.MEETING: emoji.emojize(':loudspeaker:'),
@@ -39,7 +34,6 @@ class AmongUs(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.running = False
-        self.ghosts = []
         self.channels: list[discord.VoiceChannel] = []
         self.guild_mute: bool = True
 
@@ -49,10 +43,9 @@ class AmongUs(commands.Cog):
             return
 
         print(f'{payload}')
-        print(f'{self.channels}')
 
         if GUILD_IDS and payload.guild_id not in GUILD_IDS:
-            print(f'{guild_id}で呼ばれたが、対応しないよ')
+            print(f'{payload.guild_id}で呼ばれたが、対応しないよ')
             return
 
         # bot自身のリアクションは無視
@@ -63,10 +56,9 @@ class AmongUs(commands.Cog):
         if len(self.channels) == 0:
             return
 
-        # TODO: get_channelがguilds intent必要なので fetch_channelでもいい気がする
         channel = self.bot.get_channel(payload.channel_id)
-        # messageが自分のものじゃなかったら無視
         message = await channel.fetch_message(payload.message_id)
+        # messageが自分のものじゃなかったら無視
         if message.author.id != self.bot.user.id:
             print('message author is not me')
             return
@@ -82,103 +74,91 @@ class AmongUs(commands.Cog):
         for reaction in message.reactions:
             await message.remove_reaction(reaction, payload.member)
 
-        next_mode: GameMode = GameMode.MEETING
         coroutines: list[asyncio.coroutines] = []
-        print(
-            f'meetings = {list(get_attendees(self.channels[GameMode.MEETING]))}\n'
-            f'mutes    = {list(get_attendees(self.channels[GameMode.MUTE]))}\n'
-            f'ghosts   = {list(get_attendees(self.channels[GameMode.HEAVEN]))}\n'
-            )
 
         # Reaction判定
         if payload.emoji.name == REACTIONS[GameMode.MEETING]:
-            print(f'MEERING')
+            print('MEETING')
             coroutines = self.mute_to_meeting() + self.heaven_to_meeting()
         elif payload.emoji.name == REACTIONS[GameMode.MUTE]:
-            print(f'MUTE')
+            print('MUTE')
             coroutines = self.meeting_to_mute() + self.meeting_to_heaven()
         elif payload.emoji.name == REACTIONS[GameMode.FINISH]:
-            print(f'END')
-            self.ghosts = []
+            print('END')
             coroutines = self.finish_game()
         else:
             pass
 
         print(f'{len(coroutines)=}')
 
-        startTime = time() #プログラムの終了時刻
         await asyncio.gather(*coroutines)
-        endTime = time() #プログラムの終了時刻
-        runTime = endTime - startTime #処理時間
-        print(f'gather: {runTime}')
         self.running = False
 
     def mute_to_meeting(self) -> list[asyncio.coroutine]:
-        attendees = get_attendees(self.channels[GameMode.MUTE])
+        players = get_attendees(self.channels[GameMode.MUTE])
 
         coroutines = [
             move_channel(
-                member=attendee,
+                member=player,
                 destination=self.channels[GameMode.MEETING],
                 mute=False
             )
-            for attendee in attendees
+            for player in players
         ]
         return coroutines
 
     def heaven_to_meeting(self):
- 
-        attendees = get_attendees(self.channels[GameMode.HEAVEN])
+        players = get_attendees(self.channels[GameMode.HEAVEN])
 
         coroutines = [
             move_channel(
-                member= attendee,
+                member=player,
                 destination=self.channels[GameMode.MEETING],
                 mute=True,
             )
-            for attendee in attendees
+            for player in players
         ]
         return coroutines
 
     def meeting_to_mute(self):
-        attendees = get_attendees(self.channels[GameMode.MEETING])
-        attendees = filter(lambda attendee: not (attendee.voice.mute or attendee.voice.self_mute), attendees)
+        players = get_attendees(self.channels[GameMode.MEETING])
+        players = filter(lambda player: not (player.voice.mute or player.voice.self_mute), players)
 
         # if destination is afk_channel, need not mute by guild
         move_to_mute_channel = partial(move_channel, mute=True) if self.guild_mute else move_channel
 
         coroutines = [
             move_to_mute_channel(
-                member=attendee,
+                member=player,
                 destination=self.channels[GameMode.MUTE]
                 )
-            for attendee in attendees
+            for player in players
         ]
         return coroutines
 
     def meeting_to_heaven(self):
-        attendees = get_attendees(self.channels[GameMode.MEETING])
-        attendees = filter(lambda attendee: attendee.voice.mute or attendee.voice.self_mute , attendees)
+        players = get_attendees(self.channels[GameMode.MEETING])
+        players = filter(lambda player: player.voice.mute or player.voice.self_mute, players)
 
         coroutines = [
             move_channel(
-                member=attendee,
+                member=player,
                 destination=self.channels[GameMode.HEAVEN],
                 mute=False,
             )
-            for attendee in attendees 
+            for player in players
         ]
         return coroutines
 
     def finish_game(self):
-        attendees = reduce(lambda p, n: p + n, map(lambda ch: ch.members, self.channels))
+        players = reduce(lambda p, n: p + n, map(lambda ch: ch.members, self.channels))
         coroutines = [
             move_channel(
-                member=attendee,
+                member=player,
                 destination=self.channels[GameMode.MEETING],
                 mute=False,
             )
-            for attendee in attendees
+            for player in players
         ]
         return coroutines
 
@@ -208,10 +188,7 @@ class AmongUs(commands.Cog):
         if not before.mute:
             return
 
-        print(f'{after.channel}, {self.channels[GameMode.HEAVEN]}')
         if after.channel is self.channels[GameMode.HEAVEN]:
-            print(f'{before} => {after}')
-            print('mute 解除')
             await member.edit(mute=False)
 
     @commands.command(
@@ -236,7 +213,7 @@ class AmongUs(commands.Cog):
 
         if len(args) != 3:
             # raise error
-            await ctx.send('引数2つ指定しろ')
+            await ctx.send('引数3つ指定しろ')
             return
 
         channels: list[discord.VoiceChannel] = []
@@ -246,28 +223,28 @@ class AmongUs(commands.Cog):
                 # raise error
                 await ctx.send(f'{channel_name}は存在しねえ')
                 return
-            
+
             if not isinstance(channel, discord.VoiceChannel):
                 # raise error
                 await ctx.send(f'{channel_name}はボイチャじゃねえ')
                 return
 
             channels.append(channel)
-        
+
         if channels[GameMode.MUTE] is ctx.guild.afk_channel:
             self.guild_mute = False
         else:
             self.guild_mute = True
 
         self.channels = channels
-        
+
         # 監視対象メッセージを送信
         message = await ctx.send(
                 f'{WATCH_MESSAGE} '
                 + ' '.join(map(lambda channel: channel.name, self.channels))
                 )
         await self.init_reaction_as_button(message)
-    
+
     async def init_reaction_as_button(self, message: discord.Message):
         task_add_reactions = [message.add_reaction(reaction) for reaction in REACTIONS.values()]
 
