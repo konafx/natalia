@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "natalia"
-version = "1.0.0"
+version = "1.2.0"
 description = "discord bot"
 authors = ["konafx <afxlieonon@gmail.com>"]
 
