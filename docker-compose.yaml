@@ -5,6 +5,7 @@ services:
     user: root
     build:
       context: .
+    tty: true
     environment: 
       - _DISCORD_TOKEN=${_DISCORD_TOKEN}
     container_name: "natalia"
