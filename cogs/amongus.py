@@ -39,6 +39,7 @@ class AmongUs(commands.Cog):
         self.running = False
         self.ghosts = []
         self.channels: list[discord.VoiceChannel] = []
+        self.guild_mute: bool = True
 
     @commands.Cog.listener('on_raw_reaction_add')
     async def reaction_driven_mover(self, payload: discord.RawReactionActionEvent):
@@ -151,7 +152,7 @@ class AmongUs(commands.Cog):
             move_channel(
                 member=attendee,
                 destination=self.channels[GameMode.MUTE],
-                mute=True,
+                mute=self.guild_mute,
             )
             for attendee in attendees
         ]
@@ -231,12 +232,16 @@ class AmongUs(commands.Cog):
         ctx : commands.Context
             [description]
         """
+        if not ctx.guild:
+            await ctx.send('サーバーでやれ')
+            return
+
         if len(args) != 3:
             # raise error
             await ctx.send('引数2つ指定しろ')
             return
 
-        channels: list[VoiceChannel] = []
+        channels: list[discord.VoiceChannel] = []
         for channel_name in args:
             channel = discord.utils.get(ctx.guild.channels, name=channel_name)
             if channel is None:
@@ -251,6 +256,11 @@ class AmongUs(commands.Cog):
 
             channels.append(channel)
         
+        if channels[GameMode.MUTE] is ctx.guild.afk_channel:
+            self.guild_mute = False
+        else:
+            self.guild_mute = True
+
         self.channels = channels
         
         # 監視対象メッセージを送信
