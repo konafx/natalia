@@ -143,7 +143,7 @@ class AmongUs(commands.Cog):
 
     def meeting_to_mute(self):
         attendees = get_attendees(self.channels[GameMode.MEETING])
-        attendees = filter(lambda attendee: not attendee.voice.mute or not attendee.voice.self_mute , attendees)
+        attendees = filter(lambda attendee: not (attendee.voice.mute or attendee.voice.self_mute), attendees)
 
         # if destination is afk_channel, need not mute by guild
         move_to_mute_channel = partial(move_channel, mute=True) if self.guild_mute else move_channel
