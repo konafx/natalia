@@ -33,10 +33,15 @@ REACTIONS = {
 class AmongUs(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.running = False
         self.channels: list[discord.VoiceChannel] = []
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if self.running:
+            return
+
+        self.running = True
         print(f'{payload}')
         print(f'{self.channels}')
 
@@ -70,6 +75,7 @@ class AmongUs(commands.Cog):
             return
 
         await asyncio.gather(*coroutines)
+        self.running = False
 
     async def mute_to_meeting(self) -> list[asyncio.coroutine]:
         attendees = get_attendees(self.channels[GameMode.MUTE])
