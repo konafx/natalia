@@ -1,7 +1,7 @@
 from typing import Union, Optional
 from functools import reduce, partial
 from itertools import islice
-from enum import IntFlag
+from enum import IntEnum
 import asyncio
 
 from discord.ext import commands
@@ -17,9 +17,11 @@ Channel = Union[GuildChannel, PrivateChannel]
 WATCH_MESSAGE = 'START'
 
 
-class GameMode(IntFlag):
+class GameMode(IntEnum):
     MEETING = 0
     MUTE = 1
+    HEAVEN = 2
+    LOG = 3
 
 
 REACTIONS = {
@@ -56,7 +58,7 @@ class AmongUs(commands.Cog):
         # 命令を受信したら次の命令のためにユーザーが押したリアクションを削除する
         for reaction in message.reactions:
             await message.remove_reaction(reaction, payload.member)
-        
+
         next_mode: GameMode = GameMode.MEETING
         # Reaction判定
         if payload.emoji.name == REACTIONS[GameMode.MEETING]:
@@ -65,7 +67,7 @@ class AmongUs(commands.Cog):
             next_mode = GameMode.MUTE
         else:
             return
-        
+
         attendees = get_attendees(self.channels[not next_mode])
 
         move_channel_in_mode = partial(
@@ -75,6 +77,81 @@ class AmongUs(commands.Cog):
             )
         coroutines = [move_channel_in_mode(attendee) for attendee in attendees]
         await asyncio.gather(*coroutines)
+
+    async def mute_to_meeting(self) -> list[asyncio.coroutine]:
+        attendees = get_attendees(self.channels[GameMode.MUTE])
+
+        coroutines = [
+            move_channel(
+                member=attendee,
+                destination=self.channels[GameMode.MEETING],
+                mute=False
+            )
+            for attendee in attendees
+        ]
+        return coroutines
+
+    async def heaven_to_meeting(self):
+        ghosts = get_attendees(self.channels[GameMode.HEAVEN])
+        self.ghosts = ghosts
+
+        coroutines = [
+            move_channel(
+                member=ghost,
+                destination=self.channels[GameMode.MEETING],
+                mute=True,
+            )
+            for ghost in ghosts
+        ]
+        return coroutines
+
+    async def meeting_to_mute(self):
+        attendees = get_attendees(self.channels[GameMode.MEETING])
+        attendees = filter(lambda attendee: attendee not in self.ghosts, attendees)
+
+        coroutines = [
+            move_channel(
+                member=attendee,
+                destination=self.channels[GameMode.MUTE],
+                mute=False
+            )
+            for attendee in attendees
+        ]
+        return coroutines
+
+    async def meeting_to_heaven(self):
+        coroutines = [
+            move_channel(
+                member=ghost,
+                destination=self.channels[GameMode.HEAVEN],
+                mute=False,
+            )
+            for ghost in self.ghosts
+        ]
+        return coroutines
+
+    @commands.Cog.listener(name='on_voice_state_update')
+    async def join_heaven_room(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        """
+        天界部屋に入ってきたメンバーのサーバーミュートを解除する
+
+        Parameters
+        ----------
+        member: discord.Member
+            メンバー
+        before: discord.VoiceChannel
+            変更前の状態
+        after: discord.VoiceChannel
+            変更後の状態
+
+        returns
+        ------
+        """
+        if len(self.channels) == 0:
+            return
+
+        if after.channel is self.channels[GameMode.HEAVEN]:
+            await member.edit(mute=False)
 
     @commands.command(
             brief='リアクションを押してほしいナ！',
