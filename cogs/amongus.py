@@ -18,7 +18,7 @@ Channel = Union[GuildChannel, PrivateChannel]
 
 WATCH_MESSAGE = 'START'
 
-GUILD_IDS = os.environ['_DISCORD_GUILDS']
+GUILD_IDS = os.environ.get('_DISCORD_GUILDS', None)
 
 
 class GameMode(IntEnum):
