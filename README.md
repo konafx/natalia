@@ -22,7 +22,7 @@ No Category:
 ```
 
 ## Developers
-### Start
+### Start container
 ```
 # Set _DISCORD_TOKEN or create .env
 
@@ -38,6 +38,15 @@ python natalia.py
 ```
 
 Thanks! @max-koara, @Sonochy
+
+### Start local
+```
+# Set _DISCORD_TOKEN
+
+pip install poetry
+poetry install
+poetry run python natalia.py
+```
 
 ### Branch Rule
 developブランチにPR送ってください
