@@ -1,6 +1,6 @@
 from typing import Union
 from enum import IntEnum
-from functools import reduce
+from functools import reduce, partial
 import asyncio
 import re
 from time import time
@@ -155,12 +155,14 @@ class AmongUs(commands.Cog):
         attendees = get_attendees(self.channels[GameMode.MEETING])
         attendees = filter(lambda attendee: attendee not in self.ghosts, attendees)
 
+        # if destination is afk_channel, need not mute by guild
+        move_to_mute_channel = partial(move_channel, mute=True) if self.guild_mute else move_channel
+
         coroutines = [
-            move_channel(
+            move_to_mute_channel(
                 member=attendee,
-                destination=self.channels[GameMode.MUTE],
-                mute=self.guild_mute,
-            )
+                destination=self.channels[GameMode.MUTE]
+                )
             for attendee in attendees
         ]
         endTime = time() #プログラムの終了時刻
