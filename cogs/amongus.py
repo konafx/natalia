@@ -1,6 +1,7 @@
 import re
 import os
 import asyncio
+from typing import Optional
 from enum import IntEnum
 from functools import reduce, partial
 
@@ -8,10 +9,10 @@ from discord.ext import commands
 import discord
 import emoji
 
-from utils.voice import get_attendees, move_channel
+from utils.voice import get_attendees, attendees_flow, get_muted
 
 
-WATCH_MESSAGE = '下のリアクションを押してね'
+MOVER_TITLE = 'Amove Us'
 GUILD_IDS = os.environ.get('_DISCORD_GUILDS', None)
 
 
@@ -29,19 +30,25 @@ REACTIONS = {
     GameMode.FINISH: emoji.emojize(':party_popper:')
 }
 
+MODE_NAMES = {
+    GameMode.MEETING: '討論開始!',
+    GameMode.MUTE: 'SHHHHHHHHHH!',
+    GameMode.FINISH: 'Victory or Defeat',
+}
+
+CHANNEL_LABELS = {
+    GameMode.MEETING: '会話チャンネル',
+    GameMode.MUTE: 'ミュートチャンネル',
+    GameMode.HEAVEN: '天界部屋'
+}
+
 
 class AmongUs(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.running = False
-        self.channels: list[discord.VoiceChannel] = []
-        self.guild_mute: bool = True
 
     @commands.Cog.listener('on_raw_reaction_add')
     async def reaction_driven_mover(self, payload: discord.RawReactionActionEvent):
-        if self.running:
-            return
-
         print(f'{payload}')
 
         if GUILD_IDS and payload.guild_id not in GUILD_IDS:
@@ -53,146 +60,95 @@ class AmongUs(commands.Cog):
             print(f'reacting user is me {payload.user_id} == {self.bot.user.id}')
             return
 
-        if len(self.channels) == 0:
-            return
-
-        channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        guild = self.bot.get_guild(payload.guild_id)
+        current_channel = guild.get_channel(payload.channel_id)
+        message = await current_channel.fetch_message(payload.message_id)
         # messageが自分のものじゃなかったら無視
         if message.author.id != self.bot.user.id:
             print('message author is not me')
             return
 
-        # messageが監視対象じゃなければ無視
-        watch_message_regex = re.compile(rf'^{WATCH_MESSAGE}')
-        if not watch_message_regex.match(message.content):
+        if not message.embeds:
             print('not watch message')
             return
 
-        self.running = True
+        embed = message.embeds[0]
+
+        if embed.title != MOVER_TITLE:
+            return
+
         # 命令を受信したら次の命令のためにユーザーが押したリアクションを削除する
-        for reaction in message.reactions:
-            await message.remove_reaction(reaction, payload.member)
+        task_remove_reactions = [message.remove_reaction(reaction, payload.member) for reaction in message.reactions]
+        await asyncio.gather(*task_remove_reactions)
+
+        # チャンネルを取得する
+        channels: list[discord.VoiceChannel] = []
+        for embed_proxy in embed.fields:
+            channel = guild.get_channel(int(embed_proxy.value))
+            if channel is None:
+                # raise error
+                await current_channel.send(f'{embed_proxy.name}は存在しねえ')
+                await message.delete()
+                return
+
+            if not isinstance(channel, discord.VoiceChannel):
+                # raise error
+                await ctx.send(f'{embed_proxy.name}で指定された`{channel.name}`はボイチャじゃねえ')
+                await message.delete()
+                return
+
+            channels.append(channel)
+
+        guild_mute = None if channels[GameMode.MUTE] is guild.afk_channel else True
 
         coroutines: list[asyncio.coroutines] = []
 
         # Reaction判定
         if payload.emoji.name == REACTIONS[GameMode.MEETING]:
             print('MEETING')
-            coroutines = self.mute_to_meeting() + self.heaven_to_meeting()
+            meeting_inflow = partial(
+                    attendees_flow,
+                    destination=channels[GameMode.MEETING]
+                )
+            coroutines = meeting_inflow(channels[GameMode.MUTE], mute=False) + meeting_inflow(channels[GameMode.HEAVEN], mute=True)
         elif payload.emoji.name == REACTIONS[GameMode.MUTE]:
             print('MUTE')
-            coroutines = self.meeting_to_mute() + self.meeting_to_heaven()
+            meeting_outflow = partial(
+                    attendees_flow,
+                    source=channels[GameMode.MEETING]
+                )
+            coroutines = meeting_outflow(
+                    destination=channels[GameMode.MUTE],
+                    mute=guild_mute,
+                    sieve=lambda player: not get_muted(player)
+                ) + meeting_outflow(
+                    destination=channels[GameMode.HEAVEN],
+                    mute=False,
+                    sieve=lambda player: get_muted(player)
+                )
         elif payload.emoji.name == REACTIONS[GameMode.FINISH]:
             print('END')
-            coroutines = self.finish_game()
+            players = reduce(lambda p, n: p + n, map(lambda ch: ch.members, channels))
+            coroutines = [
+                    player.edit(
+                        reason='ゲーム終了',
+                        voice_channel=channels[GameMode.MEETING],
+                        mute=False
+                        )
+                    for player in players
+                ]
         else:
-            pass
+            return
 
         print(f'{len(coroutines)=}')
 
         await asyncio.gather(*coroutines)
-        self.running = False
-
-    def mute_to_meeting(self) -> list[asyncio.coroutine]:
-        players = get_attendees(self.channels[GameMode.MUTE])
-
-        coroutines = [
-            move_channel(
-                member=player,
-                destination=self.channels[GameMode.MEETING],
-                mute=False
-            )
-            for player in players
-        ]
-        return coroutines
-
-    def heaven_to_meeting(self):
-        players = get_attendees(self.channels[GameMode.HEAVEN])
-
-        coroutines = [
-            move_channel(
-                member=player,
-                destination=self.channels[GameMode.MEETING],
-                mute=True,
-            )
-            for player in players
-        ]
-        return coroutines
-
-    def meeting_to_mute(self):
-        players = get_attendees(self.channels[GameMode.MEETING])
-        players = filter(lambda player: not (player.voice.mute or player.voice.self_mute), players)
-
-        # if destination is afk_channel, need not mute by guild
-        move_to_mute_channel = partial(move_channel, mute=True) if self.guild_mute else move_channel
-
-        coroutines = [
-            move_to_mute_channel(
-                member=player,
-                destination=self.channels[GameMode.MUTE]
-                )
-            for player in players
-        ]
-        return coroutines
-
-    def meeting_to_heaven(self):
-        players = get_attendees(self.channels[GameMode.MEETING])
-        players = filter(lambda player: player.voice.mute or player.voice.self_mute, players)
-
-        coroutines = [
-            move_channel(
-                member=player,
-                destination=self.channels[GameMode.HEAVEN],
-                mute=False,
-            )
-            for player in players
-        ]
-        return coroutines
-
-    def finish_game(self):
-        players = reduce(lambda p, n: p + n, map(lambda ch: ch.members, self.channels))
-        coroutines = [
-            move_channel(
-                member=player,
-                destination=self.channels[GameMode.MEETING],
-                mute=False,
-            )
-            for player in players
-        ]
-        return coroutines
-
-    @commands.Cog.listener(name='on_voice_state_update')
-    async def join_heaven_room(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        """
-        天界部屋に入ってきたメンバーのサーバーミュートを解除する
-
-        Parameters
-        ----------
-        member: discord.Member
-            メンバー
-        before: discord.VoiceChannel
-            変更前の状態
-        after: discord.VoiceChannel
-            変更後の状態
-
-        returns
-        ------
-        """
-        if len(self.channels) == 0:
-            return
-
-        if before.channel is self.channels[GameMode.HEAVEN]:
-            return
-
-        if not before.mute:
-            return
-
-        if after.channel is self.channels[GameMode.HEAVEN]:
-            await member.edit(mute=False)
 
     @commands.command(
+            usage='<会話用チャンネル名> <ミュート用チャンネル名> <天界部屋名>',
             brief='リアクションを押してほしいナ！',
+            help='３つのチャンネルを使ってAmong Usの部屋移動をやるヨ！\n'
+                 ''
             )
     async def mover(self, ctx: commands.Context, *args):
         """
@@ -231,18 +187,21 @@ class AmongUs(commands.Cog):
 
             channels.append(channel)
 
-        if channels[GameMode.MUTE] is ctx.guild.afk_channel:
-            self.guild_mute = False
-        else:
-            self.guild_mute = True
-
         self.channels = channels
 
-        # 監視対象メッセージを送信
-        message = await ctx.send(
-                f'{WATCH_MESSAGE} '
-                + ' '.join(map(lambda channel: channel.name, self.channels))
+        description = '各タイミングで**絵文字を押セ！**\n・' + '\n・'.join(map(
+                lambda mode: f'{MODE_NAMES[mode[0]]}→{mode[1]}',
+                REACTIONS.items()
+                ))
+        embed = discord.Embed(title=MOVER_TITLE, description=description)
+        for mode, label in CHANNEL_LABELS.items():
+            embed.add_field(
+                name=label,
+                value=channels[mode].id
                 )
+
+        # 監視対象メッセージを送信
+        message = await ctx.send(' '.join(map(lambda channel: channel.name, self.channels)), embed=embed)
         await self.init_reaction_as_button(message)
 
     async def init_reaction_as_button(self, message: discord.Message):
