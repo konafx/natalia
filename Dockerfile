@@ -1,15 +1,20 @@
-FROM python:3.9.0
+FROM python:3.9.0-alpine3.12
 USER root
+
+ARG APP_ENV
+ARG POETRY_VERSION
+ENV APP_ENV=${APP_ENV:-develop} \
+  PYTHONFAULTHANDLER=1 \
+  PYTHONUNBUFFERED=1 \
+  PYTHONHASHSEED=random \
+  PIP_NO_CACHE_DIR=off \
+  PIP_DISABLE_PIP_VERSION_CHECK=on \
+  PIP_DEFAULT_TIMEOUT=100 \
+  POETRY_VERSION=${POETRY_VERSION:-1.1.4}
 
 WORKDIR /usr/src/app
 
-RUN apt update
-RUN apt install gnupg2 -y
-
 COPY poetry.lock pyproject.toml ./
-
-# RUN apt -y install locales && \
-    # localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
 
 # ENV LANG ja_JP.UTF-8
 # ENV LANGUAGE ja_JP:ja
@@ -17,7 +22,8 @@ COPY poetry.lock pyproject.toml ./
 # ENV TZ JST-9
 # ENV TERM xterm
 
-# RUN pip install --upgrade pip
-RUN pip install poetry
+RUN apk add --no-cache gcc libressl-dev musl-dev libffi-dev
+RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
+
 RUN poetry config virtualenvs.create false \
-    && poetry install
+    && poetry install $(test "$APP_ENV" == production && echo "--no-dev") --no-interaction --no-ansi
