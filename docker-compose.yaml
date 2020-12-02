@@ -1,7 +1,7 @@
 version: "3"
 services:
   app:
-    restart: always
+    restart: on-failure:3
     user: root
     build:
       context: .
@@ -9,6 +9,8 @@ services:
     environment: 
       - _DISCORD_TOKEN=${_DISCORD_TOKEN}
       - _DISCORD_GUILDS=${_DISCORD_GUILDS}
+      - APP_ENV=${APP_ENV}
+      - POETRY_VERSION=${POETRY_VERSION}
     container_name: "natalia"
     working_dir: "/usr/src/app"
     volumes:
@@ -16,7 +18,6 @@ services:
 
   code:
     image: codercom/code-server
-    restart: always
     ports:
       - "8080:8080"
     volumes:
