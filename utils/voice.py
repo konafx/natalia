@@ -1,5 +1,8 @@
 from typing import Optional
+from collections.abc import Callable
 from itertools import filterfalse
+import asyncio
+
 import discord
 
 
@@ -60,18 +63,32 @@ def get_attendees(channel: discord.VoiceChannel, exclude_bot=True) -> list[disco
 
     return attendees
 
+def get_muted(member: discord.Member) -> bool:
+    if not member.voice:
+        raise Exception('ボイチャに接続してないヨ〜！')
 
-async def move_channel(
-        member: discord.Member,
+    return member.voice.mute or member.voice.self_mute
+
+def attendees_flow(
+        source: discord.VoiceChannel,
         destination: discord.VoiceChannel,
         mute: Optional[bool] = None,
-        reason: Optional[str] = None
-        ):
-    args = {
-        'reason': reason,
-        'voice_channel': destination,
-        }
-    if mute is not None:
-        args['mute'] = mute
+        reason: Optional[str] = None,
+        sieve: Optional[Callable[discord.Member, bool]] = None
+        ) -> list[asyncio.coroutine]:
+    """
+    """
+    attendees = get_attendees(source)
+    if sieve:
+        attendees = filter(sieve, attendees)
 
-    await member.edit(**args)
+    coroutines = [
+        attendee.edit(
+            voice_channel=destination,
+            mute=mute,
+            reason=reason
+            )
+        for attendee in attendees
+    ]
+
+    return coroutines
