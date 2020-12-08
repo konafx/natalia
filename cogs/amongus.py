@@ -8,6 +8,8 @@ from functools import reduce, partial
 from discord.ext import commands
 import discord
 import emoji
+from loguru import logger
+import ulid
 
 from utils.voice import get_attendees, attendees_flow, get_muted
 
@@ -49,15 +51,13 @@ class AmongUs(commands.Cog):
 
     @commands.Cog.listener('on_raw_reaction_add')
     async def reaction_driven_mover(self, payload: discord.RawReactionActionEvent):
-        print(f'{payload}')
-
         if GUILD_IDS and payload.guild_id not in GUILD_IDS:
-            print(f'{payload.guild_id}で呼ばれたが、対応しないよ')
+            logger.debug(f'{payload.guild_id}で呼ばれたが、対応しないよ')
             return
 
         # bot自身のリアクションは無視
         if payload.user_id == self.bot.user.id:
-            print(f'reacting user is me {payload.user_id} == {self.bot.user.id}')
+            logger.debug(f'reacting user is me')
             return
 
         guild = self.bot.get_guild(payload.guild_id)
@@ -65,17 +65,22 @@ class AmongUs(commands.Cog):
         message = await current_channel.fetch_message(payload.message_id)
         # messageが自分のものじゃなかったら無視
         if message.author.id != self.bot.user.id:
-            print('message author is not me')
+            logger.debug('message author is not me')
             return
 
         if not message.embeds:
-            print('not watch message')
+            logger.debug('not embed message')
             return
 
         embed = message.embeds[0]
 
         if embed.title != MOVER_TITLE:
+            logger.debug('not watch message')
             return
+
+        event_id = ulid.new()
+        # trigger_member = payload.member.nick if payload.member.nick else payload.member.name
+        logger.info(f'{event_id}: {payload.member}さんが{emoji.demojize(payload.emoji.name)}を押しました')
 
         # 命令を受信したら次の命令のためにユーザーが押したリアクションを削除する
         task_remove_reactions = [message.remove_reaction(reaction, payload.member) for reaction in message.reactions]
@@ -105,14 +110,14 @@ class AmongUs(commands.Cog):
 
         # Reaction判定
         if payload.emoji.name == REACTIONS[GameMode.MEETING]:
-            print('MEETING')
+            logger.debug('MEETING')
             meeting_inflow = partial(
                     attendees_flow,
                     destination=channels[GameMode.MEETING]
                 )
             coroutines = meeting_inflow(channels[GameMode.MUTE], mute=False) + meeting_inflow(channels[GameMode.HEAVEN], mute=True)
         elif payload.emoji.name == REACTIONS[GameMode.MUTE]:
-            print('MUTE')
+            logger.debug('MUTE')
             meeting_outflow = partial(
                     attendees_flow,
                     source=channels[GameMode.MEETING]
@@ -127,7 +132,7 @@ class AmongUs(commands.Cog):
                     sieve=lambda player: get_muted(player)
                 )
         elif payload.emoji.name == REACTIONS[GameMode.FINISH]:
-            print('END')
+            logger.debug('END')
             players = reduce(lambda p, n: p + n, map(lambda ch: ch.members, channels))
             coroutines = [
                     player.edit(
@@ -138,11 +143,13 @@ class AmongUs(commands.Cog):
                     for player in players
                 ]
         else:
-            return
+            logger.debug('このリアクションは関知しない')
 
-        print(f'{len(coroutines)=}')
+        logger.debug(f'ジョブ数：{len(coroutines)}')
 
         await asyncio.gather(*coroutines)
+
+        logger.success(f'{event_id}: 完了しました')
 
     @commands.command(
             usage='<会話用チャンネル名> <ミュート用チャンネル名> <天界部屋名>',
@@ -164,7 +171,7 @@ class AmongUs(commands.Cog):
             return
 
         if GUILD_IDS and ctx.guild.id not in GUILD_IDS:
-            print(f'{ctx.guild.name}で呼ばれたが、対応しないよ')
+            logger.debug(f'{ctx.guild.name}で呼ばれたが、対応しないよ')
             return
 
         if len(args) != 3:
