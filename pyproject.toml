@@ -10,6 +10,8 @@ python = "3.9.0"
 more_itertools = "^8.2.0"
 kanjize = "^0.1.0"
 emoji = "^0.6.0"
+loguru = "^0.5.3"
+ulid-py = "^1.1.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.7.9"
