@@ -15,10 +15,10 @@ services:
     working_dir: "/usr/src/app"
     volumes:
       - ./:/usr/src/app
-
-  code:
-    image: codercom/code-server
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./:/home/coder/project
+  # 
+  # code:
+  #   image: codercom/code-server
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./:/home/coder/project
