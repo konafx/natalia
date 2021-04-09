@@ -10,11 +10,10 @@ services:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_GUILDS=${DISCORD_GUILDS}
       - APP_ENV=${APP_ENV}
-      - POETRY_VERSION=${POETRY_VERSION}
     container_name: "natalia"
-    working_dir: "/usr/src/app"
+    working_dir: "/app"
     volumes:
-      - ./:/usr/src/app
+      - ./:/app
   # 
   # code:
   #   image: codercom/code-server
