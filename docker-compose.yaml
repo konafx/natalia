@@ -7,18 +7,18 @@ services:
       context: .
     tty: true
     environment: 
-      - _DISCORD_TOKEN=${_DISCORD_TOKEN}
-      - _DISCORD_GUILDS=${_DISCORD_GUILDS}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_GUILDS=${DISCORD_GUILDS}
       - APP_ENV=${APP_ENV}
       - POETRY_VERSION=${POETRY_VERSION}
     container_name: "natalia"
     working_dir: "/usr/src/app"
     volumes:
       - ./:/usr/src/app
-
-  code:
-    image: codercom/code-server
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./:/home/coder/project
+  # 
+  # code:
+  #   image: codercom/code-server
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./:/home/coder/project

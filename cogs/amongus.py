@@ -213,6 +213,6 @@ class AmongUs(commands.Cog):
 def setup(bot: commands.Bot):
     global GUILD_IDS
     if GUILD_IDS:
-        GUILD_IDS = list(map(lambda id: int(id), GUILD_IDS.split(';')))
+        GUILD_IDS = list(map(lambda id: int(id), GUILD_IDS.split(':')))
 
     bot.add_cog(AmongUs(bot))

@@ -24,7 +24,7 @@ No Category:
 ## Developers
 ### Start container
 ```
-# Set _DISCORD_TOKEN or create .env
+# Set DISCORD_TOKEN or create .env
 
 docker-compose up -d --build
 # launch codeserver at http://localhost:8080
@@ -41,7 +41,7 @@ Thanks! @max-koara, @Sonochy
 
 ### Start local
 ```
-# Set _DISCORD_TOKEN
+# Set DISCORD_TOKEN
 
 pip install poetry
 poetry install

@@ -14,7 +14,7 @@ INITIAL_EXTENSIONS = [
     'cogs.amongus'
 ]
 
-_DISCORD_TOKEN = os.environ.get('_DISCORD_TOKEN', None)
+DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN', None)
 
 class Natalia(commands.Bot):
     def __init__(self, command_prefix, intent: Optional[Intents]=None):
@@ -36,8 +36,8 @@ class Natalia(commands.Bot):
         print('-----')
 
 def main():
-    if not _DISCORD_TOKEN:
-        print('The _DISCORD_TOKEN variable is not set', file=sys.stderr)
+    if not DISCORD_TOKEN:
+        print('The DISCORD_TOKEN variable is not set', file=sys.stderr)
         sys.exit(1)
 
     # guilds (get_channel)
@@ -54,7 +54,7 @@ def main():
 
     print(f'{intent=}')
     bot = Natalia(command_prefix='!', intent=intent)
-    bot.run(_DISCORD_TOKEN)
+    bot.run(DISCORD_TOKEN)
 
 if __name__ == '__main__':
     main()
